@@ -72,6 +72,11 @@ const Index = () => {
 
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  
+  const [newPrompt, setNewPrompt] = useState({ title: '', category: '', content: '' });
+  const [newAccount, setNewAccount] = useState({ name: '', category: '', email: '', login: '', password: '', url: '' });
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -89,6 +94,90 @@ const Index = () => {
       password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return password;
+  };
+
+  const handleCreatePrompt = () => {
+    if (!newPrompt.title || !newPrompt.category || !newPrompt.content) {
+      toast({ title: 'Ошибка', description: 'Заполните все поля', variant: 'destructive' });
+      return;
+    }
+    const prompt: Prompt = {
+      id: Date.now().toString(),
+      ...newPrompt,
+      createdAt: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0]
+    };
+    setPrompts([...prompts, prompt]);
+    setNewPrompt({ title: '', category: '', content: '' });
+    toast({ title: 'Успех!', description: 'Промпт создан' });
+  };
+
+  const handleUpdatePrompt = () => {
+    if (!editingPrompt) return;
+    setPrompts(prompts.map(p => p.id === editingPrompt.id ? { ...editingPrompt, updatedAt: new Date().toISOString().split('T')[0] } : p));
+    setEditingPrompt(null);
+    toast({ title: 'Успех!', description: 'Промпт обновлен' });
+  };
+
+  const handleDeletePrompt = (id: string) => {
+    setPrompts(prompts.filter(p => p.id !== id));
+    toast({ title: 'Успех!', description: 'Промпт удален' });
+  };
+
+  const handleCreateAccount = () => {
+    if (!newAccount.name || !newAccount.email) {
+      toast({ title: 'Ошибка', description: 'Заполните обязательные поля', variant: 'destructive' });
+      return;
+    }
+    const account: Account = {
+      id: Date.now().toString(),
+      ...newAccount,
+      createdAt: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0]
+    };
+    setAccounts([...accounts, account]);
+    setNewAccount({ name: '', category: '', email: '', login: '', password: '', url: '' });
+    toast({ title: 'Успех!', description: 'Аккаунт создан' });
+  };
+
+  const handleUpdateAccount = () => {
+    if (!editingAccount) return;
+    setAccounts(accounts.map(a => a.id === editingAccount.id ? { ...editingAccount, updatedAt: new Date().toISOString().split('T')[0] } : a));
+    setEditingAccount(null);
+    toast({ title: 'Успех!', description: 'Аккаунт обновлен' });
+  };
+
+  const handleDeleteAccount = (id: string) => {
+    setAccounts(accounts.filter(a => a.id !== id));
+    toast({ title: 'Успех!', description: 'Аккаунт удален' });
+  };
+
+  const handleExportData = () => {
+    const data = { prompts, accounts };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ai-prompts-backup-${Date.now()}.json`;
+    a.click();
+    toast({ title: 'Успех!', description: 'Данные экспортированы' });
+  };
+
+  const handleImportData = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        if (data.prompts) setPrompts(data.prompts);
+        if (data.accounts) setAccounts(data.accounts);
+        toast({ title: 'Успех!', description: 'Данные импортированы' });
+      } catch (error) {
+        toast({ title: 'Ошибка', description: 'Неверный формат файла', variant: 'destructive' });
+      }
+    };
+    reader.readAsText(file);
   };
 
   const filteredPrompts = prompts.filter(p => 
@@ -281,7 +370,64 @@ export default {
     }
   },
   plugins: [require("tailwindcss-animate")],
-} satisfies Config;`
+} satisfies Config;`,
+
+    mainTsx: `import * as React from 'react';
+import { createRoot } from 'react-dom/client'
+import App from './App'
+import './index.css'
+
+createRoot(document.getElementById("root")!).render(<App />);`,
+
+    indexHtml: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AI Prompts Manager</title>
+    <meta name="description" content="Управление промптами и аккаунтами AI"/>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+<div id="root"></div>
+<script type="module" src="/src/main.tsx"></script>
+</body>
+</html>`,
+
+    packageJson: `{
+  "name": "ai-prompts-manager",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.2",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-scroll-area": "^1.1.0",
+    "@radix-ui/react-tabs": "^1.1.0",
+    "@radix-ui/react-toast": "^1.2.1",
+    "@tanstack/react-query": "^5.56.2",
+    "lucide-react": "^0.462.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.11",
+    "typescript": "^5.5.3",
+    "vite": "^5.0.0"
+  }
+}`
   };
 
   return (
@@ -350,20 +496,35 @@ export default {
                   <div className="space-y-4 pt-4">
                     <div>
                       <Label>Название</Label>
-                      <Input placeholder="Название промпта" className="mt-2" />
+                      <Input 
+                        placeholder="Название промпта" 
+                        className="mt-2"
+                        value={newPrompt.title}
+                        onChange={(e) => setNewPrompt({...newPrompt, title: e.target.value})}
+                      />
                     </div>
                     <div>
                       <Label>Категория</Label>
-                      <Input placeholder="Категория" className="mt-2" />
+                      <Input 
+                        placeholder="Категория" 
+                        className="mt-2"
+                        value={newPrompt.category}
+                        onChange={(e) => setNewPrompt({...newPrompt, category: e.target.value})}
+                      />
                     </div>
                     <div>
                       <Label>Содержимое</Label>
                       <Textarea 
                         placeholder="Введите текст промпта (поддерживается Markdown)" 
                         className="mt-2 min-h-[200px]"
+                        value={newPrompt.content}
+                        onChange={(e) => setNewPrompt({...newPrompt, content: e.target.value})}
                       />
                     </div>
-                    <Button className="w-full bg-gradient-to-r from-primary to-accent">
+                    <Button 
+                      className="w-full bg-gradient-to-r from-primary to-accent"
+                      onClick={handleCreatePrompt}
+                    >
                       Сохранить
                     </Button>
                   </div>
@@ -397,17 +558,41 @@ export default {
                     <Badge variant="secondary" className="bg-primary/20 text-primary">
                       {prompt.category}
                     </Badge>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        copyToClipboard(prompt.content);
-                      }}
-                    >
-                      <Icon name="Copy" size={16} />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          copyToClipboard(prompt.content);
+                        }}
+                      >
+                        <Icon name="Copy" size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingPrompt(prompt);
+                        }}
+                      >
+                        <Icon name="Edit" size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePrompt(prompt.id);
+                        }}
+                      >
+                        <Icon name="Trash2" size={16} />
+                      </Button>
+                    </div>
                   </div>
                   <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
                     {prompt.title}
@@ -441,29 +626,59 @@ export default {
                   <div className="space-y-4 pt-4">
                     <div>
                       <Label>Название</Label>
-                      <Input placeholder="Название аккаунта" className="mt-2" />
+                      <Input 
+                        placeholder="Название аккаунта" 
+                        className="mt-2"
+                        value={newAccount.name}
+                        onChange={(e) => setNewAccount({...newAccount, name: e.target.value})}
+                      />
                     </div>
                     <div>
                       <Label>Категория</Label>
-                      <Input placeholder="Категория" className="mt-2" />
+                      <Input 
+                        placeholder="Категория" 
+                        className="mt-2"
+                        value={newAccount.category}
+                        onChange={(e) => setNewAccount({...newAccount, category: e.target.value})}
+                      />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label>Email</Label>
-                        <Input type="email" placeholder="email@example.com" className="mt-2" />
+                        <Input 
+                          type="email" 
+                          placeholder="email@example.com" 
+                          className="mt-2"
+                          value={newAccount.email}
+                          onChange={(e) => setNewAccount({...newAccount, email: e.target.value})}
+                        />
                       </div>
                       <div>
                         <Label>Логин</Label>
-                        <Input placeholder="username" className="mt-2" />
+                        <Input 
+                          placeholder="username" 
+                          className="mt-2"
+                          value={newAccount.login}
+                          onChange={(e) => setNewAccount({...newAccount, login: e.target.value})}
+                        />
                       </div>
                     </div>
                     <div>
                       <Label>Пароль</Label>
                       <div className="flex gap-2 mt-2">
-                        <Input type="password" placeholder="••••••••" />
+                        <Input 
+                          type="password" 
+                          placeholder="••••••••"
+                          value={newAccount.password}
+                          onChange={(e) => setNewAccount({...newAccount, password: e.target.value})}
+                        />
                         <Button 
                           variant="outline" 
-                          onClick={() => toast({ title: 'Пароль сгенерирован', description: generatePassword() })}
+                          onClick={() => {
+                            const pwd = generatePassword();
+                            setNewAccount({...newAccount, password: pwd});
+                            toast({ title: 'Пароль сгенерирован', description: pwd });
+                          }}
                         >
                           <Icon name="RefreshCw" size={18} />
                         </Button>
@@ -471,9 +686,17 @@ export default {
                     </div>
                     <div>
                       <Label>URL</Label>
-                      <Input placeholder="https://chat.openai.com" className="mt-2" />
+                      <Input 
+                        placeholder="https://chat.openai.com" 
+                        className="mt-2"
+                        value={newAccount.url}
+                        onChange={(e) => setNewAccount({...newAccount, url: e.target.value})}
+                      />
                     </div>
-                    <Button className="w-full bg-gradient-to-r from-primary to-accent">
+                    <Button 
+                      className="w-full bg-gradient-to-r from-primary to-accent"
+                      onClick={handleCreateAccount}
+                    >
                       Сохранить
                     </Button>
                   </div>
@@ -494,14 +717,32 @@ export default {
                       </Badge>
                       <h3 className="font-semibold text-xl">{account.name}</h3>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => window.open(account.url, '_blank')}
-                      className="hover:bg-primary hover:text-primary-foreground"
-                    >
-                      <Icon name="ExternalLink" size={18} />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.open(account.url, '_blank')}
+                        className="hover:bg-primary hover:text-primary-foreground"
+                      >
+                        <Icon name="ExternalLink" size={18} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingAccount(account)}
+                        className="hover:bg-primary hover:text-primary-foreground"
+                      >
+                        <Icon name="Edit" size={18} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteAccount(account.id)}
+                        className="hover:bg-destructive hover:text-destructive-foreground"
+                      >
+                        <Icon name="Trash2" size={18} />
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="space-y-3">
@@ -639,24 +880,99 @@ export default {
                   </ScrollArea>
                 </div>
 
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-lg">src/main.tsx</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(codeFiles.mainTsx)}
+                    >
+                      <Icon name="Copy" size={16} className="mr-2" />
+                      Копировать
+                    </Button>
+                  </div>
+                  <ScrollArea className="h-[150px] w-full rounded-lg border border-border/50 bg-secondary/30">
+                    <pre className="p-4 text-xs">
+                      <code>{codeFiles.mainTsx}</code>
+                    </pre>
+                  </ScrollArea>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-lg">index.html</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(codeFiles.indexHtml)}
+                    >
+                      <Icon name="Copy" size={16} className="mr-2" />
+                      Копировать
+                    </Button>
+                  </div>
+                  <ScrollArea className="h-[150px] w-full rounded-lg border border-border/50 bg-secondary/30">
+                    <pre className="p-4 text-xs">
+                      <code>{codeFiles.indexHtml}</code>
+                    </pre>
+                  </ScrollArea>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-lg">package.json</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(codeFiles.packageJson)}
+                    >
+                      <Icon name="Copy" size={16} className="mr-2" />
+                      Копировать
+                    </Button>
+                  </div>
+                  <ScrollArea className="h-[200px] w-full rounded-lg border border-border/50 bg-secondary/30">
+                    <pre className="p-4 text-xs">
+                      <code>{codeFiles.packageJson}</code>
+                    </pre>
+                  </ScrollArea>
+                </div>
+
                 <div className="p-4 bg-primary/10 rounded-lg border border-primary/30">
                   <h3 className="font-semibold mb-2 flex items-center gap-2">
                     <Icon name="Info" size={18} />
-                    Структура проекта
+                    Полная структура проекта
                   </h3>
                   <pre className="text-xs text-muted-foreground">
 {`project/
-├── src/
+├── public/                    // Статические файлы
+│   └── favicon.svg
+├── src/                       // Исходный код приложения
 │   ├── pages/
-│   │   └── Index.tsx          // Главная страница приложения
+│   │   ├── Index.tsx         // Главная страница (ВСЕ ФУНКЦИИ)
+│   │   └── NotFound.tsx      // 404 страница
 │   ├── components/
-│   │   └── ui/                // UI компоненты (shadcn/ui)
-│   ├── App.tsx                // Корневой компонент
-│   ├── index.css              // Глобальные стили и переменные
-│   └── main.tsx               // Точка входа
-├── tailwind.config.ts         // Конфигурация Tailwind CSS
-├── package.json               // Зависимости проекта
-└── data/                      // Данные в формате JSON (будет создано)`}
+│   │   └── ui/               // UI компоненты (Button, Input, Dialog и т.д.)
+│   ├── hooks/
+│   │   └── use-toast.ts      // Хук для уведомлений
+│   ├── lib/
+│   │   └── utils.ts          // Утилиты
+│   ├── App.tsx               // Корневой компонент с роутингом
+│   ├── index.css             // Глобальные стили и CSS переменные
+│   └── main.tsx              // Точка входа React
+├── index.html                // HTML шаблон
+├── tailwind.config.ts        // Конфигурация Tailwind (анимации)
+├── package.json              // Зависимости и скрипты
+├── tsconfig.json             // TypeScript конфигурация
+├── vite.config.ts            // Vite конфигурация
+└── data/                     // Локальное хранилище данных (JSON)
+    ├── prompts/
+    │   ├── development.json
+    │   └── business.json
+    └── accounts/
+        └── openai.json
+
+ПРИМЕЧАНИЕ: Весь основной код находится в src/pages/Index.tsx
+Это главный файл с компонентами, логикой и UI.`}
                   </pre>
                 </div>
               </div>
@@ -711,14 +1027,21 @@ export default {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={handleExportData}>
                       <Icon name="Download" size={18} className="mr-2" />
                       Экспорт данных
                     </Button>
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => document.getElementById('import-file')?.click()}>
                       <Icon name="Upload" size={18} className="mr-2" />
                       Импорт данных
                     </Button>
+                    <input
+                      id="import-file"
+                      type="file"
+                      accept=".json"
+                      className="hidden"
+                      onChange={handleImportData}
+                    />
                   </div>
                 </div>
 
@@ -784,6 +1107,118 @@ export default {
                 </div>
               </div>
             </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {editingPrompt && (
+        <Dialog open={!!editingPrompt} onOpenChange={() => setEditingPrompt(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Редактировать промпт</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div>
+                <Label>Название</Label>
+                <Input 
+                  className="mt-2"
+                  value={editingPrompt.title}
+                  onChange={(e) => setEditingPrompt({...editingPrompt, title: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Категория</Label>
+                <Input 
+                  className="mt-2"
+                  value={editingPrompt.category}
+                  onChange={(e) => setEditingPrompt({...editingPrompt, category: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Содержимое</Label>
+                <Textarea 
+                  className="mt-2 min-h-[200px]"
+                  value={editingPrompt.content}
+                  onChange={(e) => setEditingPrompt({...editingPrompt, content: e.target.value})}
+                />
+              </div>
+              <Button 
+                className="w-full bg-gradient-to-r from-primary to-accent"
+                onClick={handleUpdatePrompt}
+              >
+                Сохранить изменения
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {editingAccount && (
+        <Dialog open={!!editingAccount} onOpenChange={() => setEditingAccount(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Редактировать аккаунт</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div>
+                <Label>Название</Label>
+                <Input 
+                  className="mt-2"
+                  value={editingAccount.name}
+                  onChange={(e) => setEditingAccount({...editingAccount, name: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Категория</Label>
+                <Input 
+                  className="mt-2"
+                  value={editingAccount.category}
+                  onChange={(e) => setEditingAccount({...editingAccount, category: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Email</Label>
+                  <Input 
+                    type="email"
+                    className="mt-2"
+                    value={editingAccount.email}
+                    onChange={(e) => setEditingAccount({...editingAccount, email: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Логин</Label>
+                  <Input 
+                    className="mt-2"
+                    value={editingAccount.login}
+                    onChange={(e) => setEditingAccount({...editingAccount, login: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Пароль</Label>
+                <Input 
+                  type="password"
+                  className="mt-2"
+                  value={editingAccount.password}
+                  onChange={(e) => setEditingAccount({...editingAccount, password: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>URL</Label>
+                <Input 
+                  className="mt-2"
+                  value={editingAccount.url}
+                  onChange={(e) => setEditingAccount({...editingAccount, url: e.target.value})}
+                />
+              </div>
+              <Button 
+                className="w-full bg-gradient-to-r from-primary to-accent"
+                onClick={handleUpdateAccount}
+              >
+                Сохранить изменения
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       )}
