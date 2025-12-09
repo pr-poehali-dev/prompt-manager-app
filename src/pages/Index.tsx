@@ -105,6 +105,185 @@ const Index = () => {
 
   const categories = Array.from(new Set([...prompts.map(p => p.category), ...accounts.map(a => a.category)]));
 
+  const codeFiles = {
+    indexTsx: `import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import Icon from '@/components/ui/icon';
+import { useToast } from '@/hooks/use-toast';
+
+interface Prompt {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Account {
+  id: string;
+  name: string;
+  email: string;
+  login: string;
+  password: string;
+  url: string;
+  category: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const Index = () => {
+  // Полный код компонента Index
+  // ... (весь код компонента)
+};
+
+export default Index;`,
+    
+    indexCss: `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 262 47% 11%;
+    --foreground: 270 20% 98%;
+    --card: 262 40% 14%;
+    --card-foreground: 270 20% 98%;
+    --popover: 262 45% 12%;
+    --popover-foreground: 270 20% 98%;
+    --primary: 263 70% 75%;
+    --primary-foreground: 262 50% 15%;
+    --secondary: 262 30% 20%;
+    --secondary-foreground: 270 20% 98%;
+    --muted: 262 30% 18%;
+    --muted-foreground: 263 15% 65%;
+    --accent: 328 86% 70%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 262 30% 22%;
+    --input: 262 30% 22%;
+    --ring: 263 70% 75%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+  }
+}`,
+
+    appTsx: `import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;`,
+
+    tailwindConfig: `import type { Config } from "tailwindcss";
+
+export default {
+  darkMode: ["class"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}"
+  ],
+  prefix: "",
+  theme: {
+    container: {
+      center: true,
+      padding: '2rem',
+      screens: {
+        '2xl': '1400px'
+      }
+    },
+    extend: {
+      colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))'
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))'
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))'
+        }
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)'
+      },
+      keyframes: {
+        'fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' }
+        },
+        'scale-in': {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' }
+        }
+      },
+      animation: {
+        'fade-in': 'fade-in 0.3s ease-out',
+        'scale-in': 'scale-in 0.2s ease-out'
+      }
+    }
+  },
+  plugins: [require("tailwindcss-animate")],
+} satisfies Config;`
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
       <div className="container mx-auto p-6 max-w-7xl">
@@ -130,6 +309,10 @@ const Index = () => {
               <TabsTrigger value="accounts" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Icon name="Users" size={16} className="mr-2" />
                 Аккаунты
+              </TabsTrigger>
+              <TabsTrigger value="code" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Icon name="Code" size={16} className="mr-2" />
+                Код
               </TabsTrigger>
               <TabsTrigger value="settings" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Icon name="Settings" size={16} className="mr-2" />
@@ -369,6 +552,117 @@ const Index = () => {
             </div>
           </TabsContent>
 
+          <TabsContent value="code" className="space-y-4 animate-fade-in">
+            <Card className="p-6 bg-card/50 backdrop-blur-sm">
+              <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+                <Icon name="Code" size={24} />
+                Исходный код приложения
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                Весь код, использованный для создания этого приложения
+              </p>
+
+              <div className="space-y-6">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-lg">src/pages/Index.tsx</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(codeFiles.indexTsx)}
+                    >
+                      <Icon name="Copy" size={16} className="mr-2" />
+                      Копировать
+                    </Button>
+                  </div>
+                  <ScrollArea className="h-[300px] w-full rounded-lg border border-border/50 bg-secondary/30">
+                    <pre className="p-4 text-xs">
+                      <code>{codeFiles.indexTsx}</code>
+                    </pre>
+                  </ScrollArea>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-lg">src/index.css</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(codeFiles.indexCss)}
+                    >
+                      <Icon name="Copy" size={16} className="mr-2" />
+                      Копировать
+                    </Button>
+                  </div>
+                  <ScrollArea className="h-[200px] w-full rounded-lg border border-border/50 bg-secondary/30">
+                    <pre className="p-4 text-xs">
+                      <code>{codeFiles.indexCss}</code>
+                    </pre>
+                  </ScrollArea>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-lg">src/App.tsx</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(codeFiles.appTsx)}
+                    >
+                      <Icon name="Copy" size={16} className="mr-2" />
+                      Копировать
+                    </Button>
+                  </div>
+                  <ScrollArea className="h-[200px] w-full rounded-lg border border-border/50 bg-secondary/30">
+                    <pre className="p-4 text-xs">
+                      <code>{codeFiles.appTsx}</code>
+                    </pre>
+                  </ScrollArea>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-lg">tailwind.config.ts</h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(codeFiles.tailwindConfig)}
+                    >
+                      <Icon name="Copy" size={16} className="mr-2" />
+                      Копировать
+                    </Button>
+                  </div>
+                  <ScrollArea className="h-[200px] w-full rounded-lg border border-border/50 bg-secondary/30">
+                    <pre className="p-4 text-xs">
+                      <code>{codeFiles.tailwindConfig}</code>
+                    </pre>
+                  </ScrollArea>
+                </div>
+
+                <div className="p-4 bg-primary/10 rounded-lg border border-primary/30">
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">
+                    <Icon name="Info" size={18} />
+                    Структура проекта
+                  </h3>
+                  <pre className="text-xs text-muted-foreground">
+{`project/
+├── src/
+│   ├── pages/
+│   │   └── Index.tsx          // Главная страница приложения
+│   ├── components/
+│   │   └── ui/                // UI компоненты (shadcn/ui)
+│   ├── App.tsx                // Корневой компонент
+│   ├── index.css              // Глобальные стили и переменные
+│   └── main.tsx               // Точка входа
+├── tailwind.config.ts         // Конфигурация Tailwind CSS
+├── package.json               // Зависимости проекта
+└── data/                      // Данные в формате JSON (будет создано)`}
+                  </pre>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="settings" className="space-y-4 animate-fade-in">
             <Card className="p-6 bg-card/50 backdrop-blur-sm">
               <h2 className="text-2xl font-semibold mb-6">Настройки</h2>
@@ -379,8 +673,43 @@ const Index = () => {
                     Хранение данных
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Данные хранятся локально в папке data/ в формате JSON
+                    Данные хранятся локально в папке data/ в формате JSON. Для каждой категории создается отдельный файл.
                   </p>
+                  
+                  <div className="mb-4 p-3 bg-secondary/30 rounded-lg border border-border/50">
+                    <p className="text-xs font-semibold mb-2">Структура папки data/:</p>
+                    <pre className="text-xs text-muted-foreground">
+{`data/
+├── prompts/
+│   ├── development.json      // Промпты категории "Разработка"
+│   ├── business.json          // Промпты категории "Бизнес"
+│   └── ...
+├── accounts/
+│   ├── openai.json            // Аккаунты категории "OpenAI"
+│   ├── anthropic.json         // Аккаунты категории "Anthropic"
+│   └── ...
+└── settings.json              // Настройки приложения`}
+                    </pre>
+                  </div>
+
+                  <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/30">
+                    <p className="text-xs font-semibold mb-2">Пример формата JSON (prompts/development.json):</p>
+                    <pre className="text-xs">
+{`{
+  "category": "Разработка",
+  "prompts": [
+    {
+      "id": "1",
+      "title": "Промпт для анализа кода",
+      "content": "Проанализируй следующий код...",
+      "createdAt": "2025-12-01",
+      "updatedAt": "2025-12-01"
+    }
+  ]
+}`}
+                    </pre>
+                  </div>
+
                   <div className="flex gap-2">
                     <Button variant="outline">
                       <Icon name="Download" size={18} className="mr-2" />
